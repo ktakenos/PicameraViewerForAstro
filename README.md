@@ -1,6 +1,9 @@
 # PicameraViewerForAstro
 Front end of Raspberry pi HQ camera and controls live view image and motorized equatorial mounts
 
+[Due to my bits and pieces coding, there are many untidy way arounds in the code. I will sort them out gradually.]
+
+
 Developed on Raspberry Pi 4B 2GB and HQ camera
 
 Required:
