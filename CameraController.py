@@ -35,7 +35,6 @@ class CameraController:
         self.CropImage = self.FrameImage[self.yZoomCenter - self.ZoomWindowHW:self.yZoomCenter + self.ZoomWindowHW,
                                         self.xZoomCenter - self.ZoomWindowHW:self.xZoomCenter + self.ZoomWindowHW]
         self.ZoomImage = (self.CropImage / 16).clip(2, 255).astype(np.uint8)
-        self.SaveImage = None
         self.DarkImage = np.zeros((self.SensorH, self.SensorW,3), dtype=np.uint16)
         self.vThreshold = 128
         self.vZAtten = 16.0
@@ -81,18 +80,20 @@ class CameraController:
             res = subprocess.check_call(StrCommand, shell=True)
         except subprocess.CalledProcessError as e:
             print(f"Capture Error: {e}")
-        WBGOption = '-r %4.3f %4.3f %4.3f %4.3f' % (self.WBGR, self.WBGG, self.WBGB, self.WBGL)
+        
         StrCommand = 'mv temp/capture1.jpg temp/capture.jpg'
+        try:
+            res = subprocess.check_call(StrCommand, shell=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Rename capture1.jpg to capture.jpg Error: {e}")
+        
+        WBGOption = '-r %4.3f %4.3f %4.3f %4.3f' % (self.WBGR, self.WBGG, self.WBGB, self.WBGL)
+        StrCommand = 'dcraw -T -4 -q 0 temp/capture.jpg'
         print(StrCommand)
         res = subprocess.check_call(StrCommand, shell=True)
         dt_now = datetime.datetime.now()
         StrCapture = "Tif pre-conversion at " + dt_now.strftime('%Y-%m-%d %H:%M:%S')
         print(StrCapture)
-        StrCommand = 'dcraw -T -4 -q 0 temp/capture.jpg'
-        try:
-            res = subprocess.check_call(StrCommand, shell=True)
-        except subprocess.CalledProcessError as e:
-            print(f'Conversion Error: {e}')
         self.fImageReady.set()
         print("fImageReady value:", self.fImageReady.is_set())
         self.FrameImage = cv2.imread('temp/capture.tiff', -1)
@@ -137,22 +138,24 @@ class CameraController:
                 elif not self.fImageReady.is_set():
                     if self.iCapRead == 1:
                         StrCommand = 'mv temp/capture1.jpg temp/capture.jpg'
+                        try:
+                            subprocess.check_call(StrCommand, shell=True)
+                        except subprocess.CalledProcessError as e:
+                            print(f"Rename capture1.jpg to capture.jpg Error: {e}")
                     elif self.iCapRead == 2:
                         StrCommand = 'mv temp/capture2.jpg temp/capture.jpg'
-                    try:
-                        subprocess.check_call(StrCommand, shell=True)
-                    except subprocess.CalledProcessError as e:
-                        print(f"Error converting raw image: {e}")
-                        continue
+                        try:
+                            subprocess.check_call(StrCommand, shell=True)
+                        except subprocess.CalledProcessError as e:
+                            print(f"Rename capture2.jpg to capture.jpg Error: {e}")
                     StrCommand = 'dcraw -T -4 -q 0 temp/capture.jpg'
                     try:
                         subprocess.check_call(StrCommand, shell=True)
                     except subprocess.CalledProcessError as e:
                         print(f"Error converting raw image: {e}")
                         continue
-
                     dt_now = datetime.datetime.now()
-                    StrCapture = "TIFF   " + dt_now.strftime('%Y-%m-%d %H:%M:%S') + " Converted"
+                    StrCapture = "TIFF " + dt_now.strftime('%Y-%m-%d %H:%M:%S') + " Converted"
                     print(StrCapture)
                     self.iCapRead += 1
                     if(self.iCapRead > 2):
@@ -190,7 +193,6 @@ class CameraController:
                 self.StackImage = self.StackImage + floatImage
                 self.StackCounter += 1
             if self.StackCounter > (int(self.MStack) - 1):
-                self.SaveImage = np.copy(self.StackImage)
                 self.MaxStackReached = 1
             self.fStackBusy = 0
             self.globals.fRunDisplayUpdate = 1

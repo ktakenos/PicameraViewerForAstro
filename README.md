@@ -6,10 +6,8 @@
 
 **Front end of Raspberry pi HQ camera and controls live view image and motorized equatorial mounts**
 
-## [Due to my bits and pieces coding, there are many untidy way arounds in the code. I will sort them out eventually.]
-
-
-**Developed on Raspberry Pi 4B 2GB and HQ camera**
+**Developed on Raspberry Pi 4B 2GB and HQ camera where the raspberry pi OS is Debian(Raspian) 10.13**
+**So the old picamera library is utiliezed**
 
 ## Required:
 python 3, <br>
@@ -38,10 +36,30 @@ By repeating the procedure above, deep sky object can be observed on the screen,
 
 It also provides GPIO signal controls for stepping motors for equatorial mounts. The signals are 5V high-low so should be connected directly to motor driver circuit board.
 
+## Files:
+MainApp.py
+Call this file in python to launch the application.
+<br>
+CameraController.py
+Camera operation module. Capturing Camera Images, Converting them to Tiff format, Stacking them, and etc.
+<br>
+GUICreator.py
+Tkinter application GUI descriptions
+<br>
+GUIHandler.py
+Callback functions of the GUI components
+<br>
+SteppingMotorControllerGPIO.py
+Generating stepping motor pulses via GPIO pins
+<br>
+PicameraViewer20220930-01.py
+Previous working (single file) version.
+
+
 ## Screenshot
 ![Screen capture](https://github.com/ktakenos/PicameraViewerForAstro/blob/main/images/vlcsnap-2022-06-01-19h24m46s743.jpg)
 
-Images taken with the software is complied in videos and uploaded in https://www.youtube.com/channel/UCxLBTU-MXtfclGAINipCrsw
+Images taken with the software is complied in videos and uploaded in https://www.youtube.com/@TinyObservatory
 
 
 
