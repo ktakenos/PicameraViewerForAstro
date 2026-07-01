@@ -67,7 +67,7 @@ class MainApp:
         while True:
             self.camera_controller.CaptureFrames()
             if self.globals.fRunDisplayUpdate:
-                self.gui_handler.update_display(self.gui_creator.CountLabel, self.gui_creator.lmain)
+                self.gui_handler.update_display(self.gui_creator.CountLabel, self.gui_creator.lmain, self.gui_creator.TrackButton)
                 if self.camera_controller.fTrack == 1:
                     if self.camera_controller.fLost == 1:
                         self.gui_creator.TrackButton.configure(bg=self.globals.ColorRED)

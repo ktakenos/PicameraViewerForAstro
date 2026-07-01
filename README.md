@@ -37,22 +37,22 @@ By repeating the procedure above, deep sky object can be observed on the screen,
 It also provides GPIO signal controls for stepping motors for equatorial mounts. The signals are 5V high-low so should be connected directly to motor driver circuit board.
 
 ## Files:
-MainApp.py
+MainApp.py<br>
 Call this file in python to launch the application.
-<br>
-CameraController.py
+<br><br>
+CameraController.py<br>
 Camera operation module. Capturing Camera Images, Converting them to Tiff format, Stacking them, and etc.
-<br>
-GUICreator.py
+<br><br>
+GUICreator.py<br>
 Tkinter application GUI descriptions
-<br>
-GUIHandler.py
+<br><br>
+GUIHandler.py<br>
 Callback functions of the GUI components
-<br>
-SteppingMotorControllerGPIO.py
+<br><br>
+SteppingMotorControllerGPIO.py<br>
 Generating stepping motor pulses via GPIO pins
-<br>
-PicameraViewer20220930-01.py
+<br><br>
+PicameraViewer20220930-01.py<br>
 Previous working (single file) version.
 
 

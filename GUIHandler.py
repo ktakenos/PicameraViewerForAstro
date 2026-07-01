@@ -200,7 +200,7 @@ class GUIHandler:
         self.update_display(CountLabel, lmain)
         self.update_zoom(zoomImage)
 
-    def update_display(self, CountLabel, lmain):
+    def update_display(self, CountLabel, lmain, TrackButton):
         if self.DisplayImage is None:
             self.initialize_images()
 
@@ -277,6 +277,13 @@ class GUIHandler:
         if(self.camera_controller.MaxStackReached==1):
             self.save_stack()
             self.camera_controller.MaxStackReached=0
+        if(self.camera_controller.fTrack):
+            if(self.camera_controller.fLost):
+                TrackButton.configure(bg=self.globals.ColorRED)
+            else:
+                TrackButton.configure(bg=self.globals.ColorBLUE2)
+        else:
+            TrackButton.configure(bg=self.globals.gray_default)
 
     def ZoomPosition(self, event, zoomImage):
         Ex, Ey = event.x, event.y
