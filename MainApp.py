@@ -4,7 +4,7 @@ import time
 from GUICreator import GUICreator
 from GUIHandler import GUIHandler
 from CameraController import CameraController
-from SteppingMotorControllerGPIO import SteppingMotorController
+from SteppingMotorController import SteppingMotorController
 
 class GlobalVariables:
     def __init__(self):

@@ -1,12 +1,121 @@
 # CameraController.py
+# ==============================================================================
+# Raspberry Pi 4 / Pi 5 両対応のカメラ制御クラス.
+#
+# カメラバックエンド自動検知:
+#   - 1st:  Picamera2Controller (picamera2 ライブラリベース)
+#           Pi5(PISP搭載) または picamera2 がインストールされた環境で動作.
+#   - 2nd:  CameraControllerRaspistill (raspistill + dcraw=subprocess ベース)
+#           Pi4/Bookworm以前で raspistill コマンドが利用可能であればこれをフォールバックとして使用する.
+#
+# インターフェースは両実装で完全一致しているため、MainApp.py のインポート文を
+# 変更することなく自動的に新しいモジュールを使用できる.
+# ==============================================================================
+
 import subprocess
 import threading
+import os
+
+
+# ---------------------------------------------------------------------------
+# カメラバックエンド自動検知 (ラズパイバージョン・環境に応じた切り替え)
+# ---------------------------------------------------------------------------
+
+
+def _detect_chip() -> str:
+    """SoC チップのモデル文字列を返す."""
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if line.startswith('Hardware'):
+                    return line.split(':')[1].strip().upper()
+    except Exception:
+        pass
+    return ''
+
+
+def _is_raspberry_pi5() -> bool:
+    """BCM2712 (Raspberry Pi 5) かどうかを判定する."""
+    chip = _detect_chip()
+    return 'BCM2712' in chip or 'BCM283XX' not in chip and 'BCM2712' in chip
+
+
+def _has_raspistill() -> bool:
+    """raspistill コマンドが利用可能なenvかを判定する."""
+    ret = subprocess.run(['which', 'raspistill'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return ret.returncode == 0
+
+
+def _has_picamera2() -> bool:
+    """picamera2 パッケージの import が成功するかを判定する."""
+    try:
+        from picamera2 import Picamera2
+        return True
+    except (ImportError, Exception):
+        return False
+
+
+# ---------------------------------------------------------------------------
+# カメラバックエンド選択ファサード.
+#
+# 動作原則:
+#   1. Raspberry Pi 5 (BCM2712) の場合 → 必須 picamera2 (raspistill は存在しない)
+#   2. picamera2 がインストールされており raspistill が無い場合 → picamera2
+#   3. それ以外 (Pi4 + raspistill あり など) → raspistill ベース
+# ---------------------------------------------------------------------------
+
+
+def _auto_select_camera_backend():
+    """環境に応じて最適なカメラバックエンドクラスを返す."""
+
+    pi5 = _is_raspberry_pi5()
+    has_picam2 = _has_picamera2()
+    has_rasp = _has_raspistill()
+
+    # Pi5 は raspistill が存在しないため picamera2 に強制. picamera2 がない場合はエラー.
+    if pi5:
+        if has_picam2:
+            print(">>> [CameraController] Raspberry Pi 5 検出 → Picamera2Controller を使用します")
+            from Picamera2Controller import Picamera2Controller
+            return Picamera2Controller
+        else:
+            raise ImportError(
+                "Raspberry Pi 5 (BCM2712) を検出しましたが、picamera2 がインストールされていません.\n"
+                "「pip install picamera2」を実行してください."
+            )
+
+    # Pi4 系などで両方のパスが利用可能な場合の優先順位判定:
+    # - picamera2 ある + raspistillがない → picamera2 と強制
+    if has_picam2 and not has_rasp:
+        print(">>> [CameraController] raspistill が利用不可 (Bookwormなど) → Picamera2Controller を使用します")
+        from Picamera2Controller import Picamera2Controller
+        return Picamera2Controller
+
+    # picamera2 も raspistill もある場合: raspistill ベースをデフォルト優先 (従来の挙動維持)
+    # 環境変数 PICAMERA_BACKEND=picam2 で picamera2 を強制できる.
+    force_backend = os.environ.get('PICAMERA_BACKEND', '').upper()
+
+    if force_backend == 'PICAM2' and has_picam2:
+        print(">>> [CameraController] 環境変数 PICAMERA_BACKEND=picam2 → Picamera2Controller を強制使用します")
+        from Picamera2Controller import Picamera2Controller
+        return Picamera2Controller
+
+    # デフォルト: raspistill ベース (既存のコード)
+    print(">>> [CameraController] CameraControllerRaspistill (raspistill/dcraw subprocess ベース) を使用します")
+    # ↓ below で定義する raspistill ベースのクラス. import 回避のためここで関数を return
+    return None
+
+
+# ==============================================================================
+# Raspistill + dcraw (subprocess) ベースのカメラ制御クラス
+# ==============================================================================
 import cv2
 import numpy as np
 import datetime
 import time
 
-class CameraController:
+
+class CameraControllerRaspistill:
     def __init__(self, stepping_motor_controller, globals):
         self.stepping_motor_controller = stepping_motor_controller
         self.globals = globals
@@ -264,3 +373,13 @@ class CameraController:
             self.convert_thread.join(timeout=5)  # タイムアウトを追加
             if self.convert_thread.is_alive():
                 print("convert_thread is still alive, forcing termination")
+
+
+# ==============================================================================
+# ファサードエイリアス: MainApp.py から `from CameraController import CameraController`
+# のまま使えるように環境に応じたクラスを割り当てる.
+# ==============================================================================
+
+_SelectedCameraClass = _auto_select_camera_backend()
+CameraController = (_SelectedCameraClass if _SelectedCameraClass is not None 
+                    else CameraControllerRaspistill)
