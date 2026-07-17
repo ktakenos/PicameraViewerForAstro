@@ -141,9 +141,9 @@ class Picamera2Controller:
         self.fImageReady.clear()
         self.AnalogGain = 16
         self.WBGR = 1.4
-        self.WBGG = 1.2
-        self.WBGB = 1.5
-        self.WBGL = 1.0
+        self.WBGG = 1.3
+        self.WBGB = 1.2
+        self.WBGL = 1/(self.WBGR*self.WBGG*self.WBGB)
         self.SensorW = 4056
         self.SensorH = 3040
         self.xZoomCenter = int(self.SensorW / 2)
@@ -489,7 +489,7 @@ class Picamera2Controller:
 
                 else:
                     # uint16 のまま既に16bit. scale=1.0
-                    scale = 1.0
+                    scale = 1.0 * self.WBGL
 
 
                 rb = rd16.astype(np.float32)

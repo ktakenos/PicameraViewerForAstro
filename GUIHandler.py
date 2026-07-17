@@ -275,7 +275,7 @@ class GUIHandler:
         CountLabel.configure(textvariable=self.globals.CounterStr)
 
         if(self.camera_controller.MaxStackReached==1):
-            self.save_stack()
+            self.save_stack(CountLabel)
             self.camera_controller.MaxStackReached=0
         if(self.camera_controller.fTrack):
             if(self.camera_controller.fLost):
@@ -353,6 +353,8 @@ class GUIHandler:
         self.camera_controller.StackCounter = 0
         self.globals.CounterStr.set('%s' % self.camera_controller.StackCounter)
         CountLabel.configure(textvariable=self.globals.CounterStr)
+        # カメラキャプチャスレッドを再開（Picamera2Controller.CaptureFrames で fRunCamera.clear() されているため）
+        self.camera_controller.fRunCamera.set()
 
     def ChangeSlope0(self, ScaleValue):
         self.globals.Slope0 = float(ScaleValue)
